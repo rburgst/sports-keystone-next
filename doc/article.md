@@ -39,3 +39,55 @@ and the keystone app
 yarn create keystone-app
 ```
 
+We will slightly tweak the `package.json` to contain tasks for both projects: 
+```json
+"scripts": {
+    "dev": "keystone-next dev",
+    "start": "keystone-next start",
+    "build": "keystone-next build",
+    "lint": "next lint",
+    "site:dev": "next dev -p 8000",
+    "site:build": "next build",
+    "site:start": "next start -p 8000",
+    "migrate": "keystone-next prisma migrate deploy",
+    "format": "prettier --write \"**/*.ts\"",
+    "postinstall": "keystone-next postinstall"
+  },
+```
+
+The tasks `dev`, `start` and `build` were created by `keystone` and we renamed the next tasks as `site:dev`, `site:build` and `site:start`.
+
+In addition we switch to `yarn2`
+
+```bash
+yarn set version berry
+yarn set version latest
+```
+
+Sadly, keystone does not yet work properly with PNP so we stick with `node-modules` for now
+
+```yaml
+# .yarnrc.yml
+yarnPath: .yarn/releases/yarn-3.0.2.cjs
+nodeLinker: node-modules
+```
+
+Finally we need to run `yarn install` to install all dependencies using `yarn2`.
+
+So lets start up both servers and see what we got:
+
+```bash
+shell1: yarn dev
+shell2: yarn site:start
+```
+
+Starting up keystone on http://localhost:3000 produces the following create user screen
+
+<img src="/Users/rainer/git/private/turnen/turnen-keystone-next/doc/01-keystone-auth.png" alt="User Creation" style="zoom:50%;" />
+
+And next shows the default empty next js app screen on http://localhost:8000/ 
+
+<img src="02-next-js-empty.png" alt="empty next app" style="zoom:50%;" />
+
+Finally, we match up the repo with https://github.com/keystonejs/prisma-day-2021-workshop.
+
