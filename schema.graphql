@@ -21,18 +21,33 @@ type Mutation {
   updateUsers(data: [UserUpdateArgs!]!): [User]
   deleteUser(where: UserWhereUniqueInput!): User
   deleteUsers(where: [UserWhereUniqueInput!]!): [User]
-  createPost(data: PostCreateInput!): Post
-  createPosts(data: [PostCreateInput!]!): [Post]
-  updatePost(where: PostWhereUniqueInput!, data: PostUpdateInput!): Post
-  updatePosts(data: [PostUpdateArgs!]!): [Post]
-  deletePost(where: PostWhereUniqueInput!): Post
-  deletePosts(where: [PostWhereUniqueInput!]!): [Post]
-  createTag(data: TagCreateInput!): Tag
-  createTags(data: [TagCreateInput!]!): [Tag]
-  updateTag(where: TagWhereUniqueInput!, data: TagUpdateInput!): Tag
-  updateTags(data: [TagUpdateArgs!]!): [Tag]
-  deleteTag(where: TagWhereUniqueInput!): Tag
-  deleteTags(where: [TagWhereUniqueInput!]!): [Tag]
+  createRole(data: RoleCreateInput!): Role
+  createRoles(data: [RoleCreateInput!]!): [Role]
+  updateRole(where: RoleWhereUniqueInput!, data: RoleUpdateInput!): Role
+  updateRoles(data: [RoleUpdateArgs!]!): [Role]
+  deleteRole(where: RoleWhereUniqueInput!): Role
+  deleteRoles(where: [RoleWhereUniqueInput!]!): [Role]
+  createClub(data: ClubCreateInput!): Club
+  createClubs(data: [ClubCreateInput!]!): [Club]
+  updateClub(where: ClubWhereUniqueInput!, data: ClubUpdateInput!): Club
+  updateClubs(data: [ClubUpdateArgs!]!): [Club]
+  deleteClub(where: ClubWhereUniqueInput!): Club
+  deleteClubs(where: [ClubWhereUniqueInput!]!): [Club]
+  createAthlete(data: AthleteCreateInput!): Athlete
+  createAthletes(data: [AthleteCreateInput!]!): [Athlete]
+  updateAthlete(
+    where: AthleteWhereUniqueInput!
+    data: AthleteUpdateInput!
+  ): Athlete
+  updateAthletes(data: [AthleteUpdateArgs!]!): [Athlete]
+  deleteAthlete(where: AthleteWhereUniqueInput!): Athlete
+  deleteAthletes(where: [AthleteWhereUniqueInput!]!): [Athlete]
+  createTeam(data: TeamCreateInput!): Team
+  createTeams(data: [TeamCreateInput!]!): [Team]
+  updateTeam(where: TeamWhereUniqueInput!, data: TeamUpdateInput!): Team
+  updateTeams(data: [TeamUpdateArgs!]!): [Team]
+  deleteTeam(where: TeamWhereUniqueInput!): Team
+  deleteTeams(where: [TeamWhereUniqueInput!]!): [Team]
   endSession: Boolean!
 }
 
@@ -56,13 +71,8 @@ type User {
   name: String
   email: String
   password: PasswordState
-  posts(
-    where: PostWhereInput! = {}
-    orderBy: [PostOrderByInput!]! = []
-    take: Int
-    skip: Int! = 0
-  ): [Post!]
-  postsCount(where: PostWhereInput! = {}): Int
+  role: Role
+  club: Club
 }
 
 type PasswordState {
@@ -81,7 +91,8 @@ input UserWhereInput {
   id: IDFilter
   name: StringFilter
   email: StringFilter
-  posts: PostManyRelationFilter
+  role: RoleWhereInput
+  club: ClubWhereInput
 }
 
 input IDFilter {
@@ -123,12 +134,6 @@ input NestedStringFilter {
   not: NestedStringFilter
 }
 
-input PostManyRelationFilter {
-  every: PostWhereInput
-  some: PostWhereInput
-  none: PostWhereInput
-}
-
 input UserOrderByInput {
   id: OrderDirection
   name: OrderDirection
@@ -144,14 +149,20 @@ input UserUpdateInput {
   name: String
   email: String
   password: String
-  posts: PostRelateToManyForUpdateInput
+  role: RoleRelateToOneForUpdateInput
+  club: ClubRelateToOneForUpdateInput
 }
 
-input PostRelateToManyForUpdateInput {
-  disconnect: [PostWhereUniqueInput!]
-  set: [PostWhereUniqueInput!]
-  create: [PostCreateInput!]
-  connect: [PostWhereUniqueInput!]
+input RoleRelateToOneForUpdateInput {
+  create: RoleCreateInput
+  connect: RoleWhereUniqueInput
+  disconnect: Boolean
+}
+
+input ClubRelateToOneForUpdateInput {
+  create: ClubCreateInput
+  connect: ClubWhereUniqueInput
+  disconnect: Boolean
 }
 
 input UserUpdateArgs {
@@ -163,51 +174,194 @@ input UserCreateInput {
   name: String
   email: String
   password: String
-  posts: PostRelateToManyForCreateInput
+  role: RoleRelateToOneForCreateInput
+  club: ClubRelateToOneForCreateInput
 }
 
-input PostRelateToManyForCreateInput {
-  create: [PostCreateInput!]
-  connect: [PostWhereUniqueInput!]
+input RoleRelateToOneForCreateInput {
+  create: RoleCreateInput
+  connect: RoleWhereUniqueInput
 }
 
-type Post {
+input ClubRelateToOneForCreateInput {
+  create: ClubCreateInput
+  connect: ClubWhereUniqueInput
+}
+
+type Role {
   id: ID!
-  title: String
-  status: String
-  content: Post_content_Document
-  publishDate: DateTime
-  author: User
-  tags(
-    where: TagWhereInput! = {}
-    orderBy: [TagOrderByInput!]! = []
+  name: String
+  canManageClubs: Boolean
+  canManageUsers: Boolean
+  canReadAllAthletes: Boolean
+  canWriteAllAthletes: Boolean
+  canReadOwnClubAthletes: Boolean
+  canWriteOwnClubAthletes: Boolean
+  canEnterScores: Boolean
+  canEnterScoresWhenDone: Boolean
+  canManageContent: Boolean
+  users(
+    where: UserWhereInput! = {}
+    orderBy: [UserOrderByInput!]! = []
     take: Int
     skip: Int! = 0
-  ): [Tag!]
-  tagsCount(where: TagWhereInput! = {}): Int
+  ): [User!]
+  usersCount(where: UserWhereInput! = {}): Int
 }
 
-type Post_content_Document {
-  document(hydrateRelationships: Boolean! = false): JSON!
-}
-
-scalar DateTime
-  @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc3339#section-5.6")
-
-input PostWhereUniqueInput {
+input RoleWhereUniqueInput {
   id: ID
 }
 
-input PostWhereInput {
-  AND: [PostWhereInput!]
-  OR: [PostWhereInput!]
-  NOT: [PostWhereInput!]
+input RoleWhereInput {
+  AND: [RoleWhereInput!]
+  OR: [RoleWhereInput!]
+  NOT: [RoleWhereInput!]
   id: IDFilter
-  title: StringFilter
-  status: StringNullableFilter
-  publishDate: DateTimeNullableFilter
-  author: UserWhereInput
-  tags: TagManyRelationFilter
+  name: StringFilter
+  canManageClubs: BooleanFilter
+  canManageUsers: BooleanFilter
+  canReadAllAthletes: BooleanFilter
+  canWriteAllAthletes: BooleanFilter
+  canReadOwnClubAthletes: BooleanFilter
+  canWriteOwnClubAthletes: BooleanFilter
+  canEnterScores: BooleanFilter
+  canEnterScoresWhenDone: BooleanFilter
+  canManageContent: BooleanFilter
+  users: UserManyRelationFilter
+}
+
+input BooleanFilter {
+  equals: Boolean
+  not: BooleanFilter
+}
+
+input UserManyRelationFilter {
+  every: UserWhereInput
+  some: UserWhereInput
+  none: UserWhereInput
+}
+
+input RoleOrderByInput {
+  id: OrderDirection
+  name: OrderDirection
+  canManageClubs: OrderDirection
+  canManageUsers: OrderDirection
+  canReadAllAthletes: OrderDirection
+  canWriteAllAthletes: OrderDirection
+  canReadOwnClubAthletes: OrderDirection
+  canWriteOwnClubAthletes: OrderDirection
+  canEnterScores: OrderDirection
+  canEnterScoresWhenDone: OrderDirection
+  canManageContent: OrderDirection
+}
+
+input RoleUpdateInput {
+  name: String
+  canManageClubs: Boolean
+  canManageUsers: Boolean
+  canReadAllAthletes: Boolean
+  canWriteAllAthletes: Boolean
+  canReadOwnClubAthletes: Boolean
+  canWriteOwnClubAthletes: Boolean
+  canEnterScores: Boolean
+  canEnterScoresWhenDone: Boolean
+  canManageContent: Boolean
+  users: UserRelateToManyForUpdateInput
+}
+
+input UserRelateToManyForUpdateInput {
+  disconnect: [UserWhereUniqueInput!]
+  set: [UserWhereUniqueInput!]
+  create: [UserCreateInput!]
+  connect: [UserWhereUniqueInput!]
+}
+
+input RoleUpdateArgs {
+  where: RoleWhereUniqueInput!
+  data: RoleUpdateInput!
+}
+
+input RoleCreateInput {
+  name: String
+  canManageClubs: Boolean
+  canManageUsers: Boolean
+  canReadAllAthletes: Boolean
+  canWriteAllAthletes: Boolean
+  canReadOwnClubAthletes: Boolean
+  canWriteOwnClubAthletes: Boolean
+  canEnterScores: Boolean
+  canEnterScoresWhenDone: Boolean
+  canManageContent: Boolean
+  users: UserRelateToManyForCreateInput
+}
+
+input UserRelateToManyForCreateInput {
+  create: [UserCreateInput!]
+  connect: [UserWhereUniqueInput!]
+}
+
+type Club {
+  id: ID!
+  clubName: String
+  clubNumber: Int
+  contactEmail: String
+  addressName: String
+  street: String
+  zip: String
+  city: String
+  country: String
+  external: Boolean
+  managerUser: User
+  athletes(
+    where: AthleteWhereInput! = {}
+    orderBy: [AthleteOrderByInput!]! = []
+    take: Int
+    skip: Int! = 0
+  ): [Athlete!]
+  athletesCount(where: AthleteWhereInput! = {}): Int
+  teams(
+    where: TeamWhereInput! = {}
+    orderBy: [TeamOrderByInput!]! = []
+    take: Int
+    skip: Int! = 0
+  ): [Team!]
+  teamsCount(where: TeamWhereInput! = {}): Int
+}
+
+input ClubWhereUniqueInput {
+  id: ID
+  clubNumber: Int
+}
+
+input ClubWhereInput {
+  AND: [ClubWhereInput!]
+  OR: [ClubWhereInput!]
+  NOT: [ClubWhereInput!]
+  id: IDFilter
+  clubName: StringFilter
+  clubNumber: IntNullableFilter
+  contactEmail: StringFilter
+  addressName: StringFilter
+  street: StringFilter
+  zip: StringFilter
+  city: StringFilter
+  country: StringNullableFilter
+  external: BooleanFilter
+  managerUser: UserWhereInput
+  athletes: AthleteManyRelationFilter
+  teams: TeamManyRelationFilter
+}
+
+input IntNullableFilter {
+  equals: Int
+  in: [Int!]
+  notIn: [Int!]
+  lt: Int
+  lte: Int
+  gt: Int
+  gte: Int
+  not: IntNullableFilter
 }
 
 input StringNullableFilter {
@@ -238,6 +392,154 @@ input NestedStringNullableFilter {
   not: NestedStringNullableFilter
 }
 
+input AthleteManyRelationFilter {
+  every: AthleteWhereInput
+  some: AthleteWhereInput
+  none: AthleteWhereInput
+}
+
+input TeamManyRelationFilter {
+  every: TeamWhereInput
+  some: TeamWhereInput
+  none: TeamWhereInput
+}
+
+input ClubOrderByInput {
+  id: OrderDirection
+  clubName: OrderDirection
+  clubNumber: OrderDirection
+  contactEmail: OrderDirection
+  addressName: OrderDirection
+  street: OrderDirection
+  zip: OrderDirection
+  city: OrderDirection
+  country: OrderDirection
+  external: OrderDirection
+}
+
+input ClubUpdateInput {
+  clubName: String
+  clubNumber: Int
+  contactEmail: String
+  addressName: String
+  street: String
+  zip: String
+  city: String
+  country: String
+  external: Boolean
+  managerUser: UserRelateToOneForUpdateInput
+  athletes: AthleteRelateToManyForUpdateInput
+  teams: TeamRelateToManyForUpdateInput
+}
+
+input UserRelateToOneForUpdateInput {
+  create: UserCreateInput
+  connect: UserWhereUniqueInput
+  disconnect: Boolean
+}
+
+input AthleteRelateToManyForUpdateInput {
+  disconnect: [AthleteWhereUniqueInput!]
+  set: [AthleteWhereUniqueInput!]
+  create: [AthleteCreateInput!]
+  connect: [AthleteWhereUniqueInput!]
+}
+
+input TeamRelateToManyForUpdateInput {
+  disconnect: [TeamWhereUniqueInput!]
+  set: [TeamWhereUniqueInput!]
+  create: [TeamCreateInput!]
+  connect: [TeamWhereUniqueInput!]
+}
+
+input ClubUpdateArgs {
+  where: ClubWhereUniqueInput!
+  data: ClubUpdateInput!
+}
+
+input ClubCreateInput {
+  clubName: String
+  clubNumber: Int
+  contactEmail: String
+  addressName: String
+  street: String
+  zip: String
+  city: String
+  country: String
+  external: Boolean
+  managerUser: UserRelateToOneForCreateInput
+  athletes: AthleteRelateToManyForCreateInput
+  teams: TeamRelateToManyForCreateInput
+}
+
+input UserRelateToOneForCreateInput {
+  create: UserCreateInput
+  connect: UserWhereUniqueInput
+}
+
+input AthleteRelateToManyForCreateInput {
+  create: [AthleteCreateInput!]
+  connect: [AthleteWhereUniqueInput!]
+}
+
+input TeamRelateToManyForCreateInput {
+  create: [TeamCreateInput!]
+  connect: [TeamWhereUniqueInput!]
+}
+
+type Athlete {
+  id: ID!
+  firstName: String
+  lastName: String
+  birthYear: Int
+  gender: String
+  disabled: Boolean
+  club: Club
+  team: Team
+  version: Int
+  createdBy: String
+  lastModifiedBy: String
+  createdDate: DateTime
+  lastModifiedDate: DateTime
+}
+
+scalar DateTime
+  @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc3339#section-5.6")
+
+input AthleteWhereUniqueInput {
+  id: ID
+}
+
+input AthleteWhereInput {
+  AND: [AthleteWhereInput!]
+  OR: [AthleteWhereInput!]
+  NOT: [AthleteWhereInput!]
+  id: IDFilter
+  firstName: StringFilter
+  lastName: StringFilter
+  birthYear: IntFilter
+  gender: StringNullableFilter
+  disabled: BooleanFilter
+  club: ClubWhereInput
+  team: TeamWhereInput
+  version: IntFilter
+  createdBy: StringFilter
+  lastModifiedBy: StringFilter
+  createdDate: DateTimeNullableFilter
+  lastModifiedDate: DateTimeNullableFilter
+}
+
+input IntFilter {
+  equals: Int
+  in: [Int!]
+  notIn: [Int!]
+  lt: Int
+  lte: Int
+  gt: Int
+  gte: Int
+  not: IntFilter
+}
+
 input DateTimeNullableFilter {
   equals: DateTime
   in: [DateTime!]
@@ -249,108 +551,118 @@ input DateTimeNullableFilter {
   not: DateTimeNullableFilter
 }
 
-input TagManyRelationFilter {
-  every: TagWhereInput
-  some: TagWhereInput
-  none: TagWhereInput
-}
-
-input PostOrderByInput {
+input AthleteOrderByInput {
   id: OrderDirection
-  title: OrderDirection
-  status: OrderDirection
-  publishDate: OrderDirection
+  firstName: OrderDirection
+  lastName: OrderDirection
+  birthYear: OrderDirection
+  gender: OrderDirection
+  disabled: OrderDirection
+  version: OrderDirection
+  createdBy: OrderDirection
+  lastModifiedBy: OrderDirection
+  createdDate: OrderDirection
+  lastModifiedDate: OrderDirection
 }
 
-input PostUpdateInput {
-  title: String
-  status: String
-  content: JSON
-  publishDate: DateTime
-  author: UserRelateToOneForUpdateInput
-  tags: TagRelateToManyForUpdateInput
+input AthleteUpdateInput {
+  firstName: String
+  lastName: String
+  birthYear: Int
+  gender: String
+  disabled: Boolean
+  club: ClubRelateToOneForUpdateInput
+  team: TeamRelateToOneForUpdateInput
+  version: Int
+  createdBy: String
+  lastModifiedBy: String
+  createdDate: DateTime
+  lastModifiedDate: DateTime
 }
 
-input UserRelateToOneForUpdateInput {
-  create: UserCreateInput
-  connect: UserWhereUniqueInput
+input TeamRelateToOneForUpdateInput {
+  create: TeamCreateInput
+  connect: TeamWhereUniqueInput
   disconnect: Boolean
 }
 
-input TagRelateToManyForUpdateInput {
-  disconnect: [TagWhereUniqueInput!]
-  set: [TagWhereUniqueInput!]
-  create: [TagCreateInput!]
-  connect: [TagWhereUniqueInput!]
+input AthleteUpdateArgs {
+  where: AthleteWhereUniqueInput!
+  data: AthleteUpdateInput!
 }
 
-input PostUpdateArgs {
-  where: PostWhereUniqueInput!
-  data: PostUpdateInput!
+input AthleteCreateInput {
+  firstName: String
+  lastName: String
+  birthYear: Int
+  gender: String
+  disabled: Boolean
+  club: ClubRelateToOneForCreateInput
+  team: TeamRelateToOneForCreateInput
+  version: Int
+  createdBy: String
+  lastModifiedBy: String
+  createdDate: DateTime
+  lastModifiedDate: DateTime
 }
 
-input PostCreateInput {
-  title: String
-  status: String
-  content: JSON
-  publishDate: DateTime
-  author: UserRelateToOneForCreateInput
-  tags: TagRelateToManyForCreateInput
+input TeamRelateToOneForCreateInput {
+  create: TeamCreateInput
+  connect: TeamWhereUniqueInput
 }
 
-input UserRelateToOneForCreateInput {
-  create: UserCreateInput
-  connect: UserWhereUniqueInput
-}
-
-input TagRelateToManyForCreateInput {
-  create: [TagCreateInput!]
-  connect: [TagWhereUniqueInput!]
-}
-
-type Tag {
+type Team {
   id: ID!
-  name: String
-  posts(
-    where: PostWhereInput! = {}
-    orderBy: [PostOrderByInput!]! = []
+  teamName: String
+  teamType: String
+  club: Club
+  athletes(
+    where: AthleteWhereInput! = {}
+    orderBy: [AthleteOrderByInput!]! = []
     take: Int
     skip: Int! = 0
-  ): [Post!]
-  postsCount(where: PostWhereInput! = {}): Int
+  ): [Athlete!]
+  athletesCount(where: AthleteWhereInput! = {}): Int
 }
 
-input TagWhereUniqueInput {
+input TeamWhereUniqueInput {
   id: ID
 }
 
-input TagWhereInput {
-  AND: [TagWhereInput!]
-  OR: [TagWhereInput!]
-  NOT: [TagWhereInput!]
+input TeamWhereInput {
+  AND: [TeamWhereInput!]
+  OR: [TeamWhereInput!]
+  NOT: [TeamWhereInput!]
   id: IDFilter
-  name: StringFilter
-  posts: PostManyRelationFilter
+  teamName: StringFilter
+  teamType: StringFilter
+  club: ClubWhereInput
+  athletes: AthleteManyRelationFilter
 }
 
-input TagOrderByInput {
+input TeamOrderByInput {
   id: OrderDirection
-  name: OrderDirection
+  teamName: OrderDirection
+  teamType: OrderDirection
 }
 
-input TagUpdateInput {
-  name: String
-  posts: PostRelateToManyForUpdateInput
+input TeamUpdateInput {
+  teamName: String
+  teamType: String
+  club: ClubRelateToOneForUpdateInput
+  athletes: AthleteRelateToManyForUpdateInput
 }
 
-input TagUpdateArgs {
-  where: TagWhereUniqueInput!
-  data: TagUpdateInput!
+input TeamUpdateArgs {
+  where: TeamWhereUniqueInput!
+  data: TeamUpdateInput!
 }
 
-input TagCreateInput {
-  name: String
-  posts: PostRelateToManyForCreateInput
+input TeamCreateInput {
+  teamName: String
+  teamType: String
+  club: ClubRelateToOneForCreateInput
+  athletes: AthleteRelateToManyForCreateInput
 }
 
 """
@@ -371,22 +683,38 @@ type Query {
   ): [User!]
   user(where: UserWhereUniqueInput!): User
   usersCount(where: UserWhereInput! = {}): Int
-  posts(
-    where: PostWhereInput! = {}
-    orderBy: [PostOrderByInput!]! = []
+  roles(
+    where: RoleWhereInput! = {}
+    orderBy: [RoleOrderByInput!]! = []
     take: Int
     skip: Int! = 0
-  ): [Post!]
-  post(where: PostWhereUniqueInput!): Post
-  postsCount(where: PostWhereInput! = {}): Int
-  tags(
-    where: TagWhereInput! = {}
-    orderBy: [TagOrderByInput!]! = []
+  ): [Role!]
+  role(where: RoleWhereUniqueInput!): Role
+  rolesCount(where: RoleWhereInput! = {}): Int
+  clubs(
+    where: ClubWhereInput! = {}
+    orderBy: [ClubOrderByInput!]! = []
     take: Int
     skip: Int! = 0
-  ): [Tag!]
-  tag(where: TagWhereUniqueInput!): Tag
-  tagsCount(where: TagWhereInput! = {}): Int
+  ): [Club!]
+  club(where: ClubWhereUniqueInput!): Club
+  clubsCount(where: ClubWhereInput! = {}): Int
+  athletes(
+    where: AthleteWhereInput! = {}
+    orderBy: [AthleteOrderByInput!]! = []
+    take: Int
+    skip: Int! = 0
+  ): [Athlete!]
+  athlete(where: AthleteWhereUniqueInput!): Athlete
+  athletesCount(where: AthleteWhereInput! = {}): Int
+  teams(
+    where: TeamWhereInput! = {}
+    orderBy: [TeamOrderByInput!]! = []
+    take: Int
+    skip: Int! = 0
+  ): [Team!]
+  team(where: TeamWhereUniqueInput!): Team
+  teamsCount(where: TeamWhereInput! = {}): Int
   keystone: KeystoneMeta!
 }
 

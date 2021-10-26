@@ -13,28 +13,77 @@ generator client {
 }
 
 model User {
-  id       String @id @default(cuid())
-  name     String @default("")
-  email    String @unique @default("")
+  id       String  @id @default(cuid())
+  name     String  @default("")
+  email    String  @unique @default("")
   password String
-  posts    Post[] @relation("Post_author")
+  role     Role?   @relation("User_role", fields: [roleId], references: [id])
+  roleId   String? @map("role")
+  club     Club?   @relation("Club_managerUser")
+
+  @@index([roleId])
 }
 
-model Post {
-  id          String    @id @default(cuid())
-  title       String    @default("")
-  status      String?   @default("draft")
-  content     String    @default("[{\"type\":\"paragraph\",\"children\":[{\"text\":\"\"}]}]")
-  publishDate DateTime?
-  author      User?     @relation("Post_author", fields: [authorId], references: [id])
-  authorId    String?   @map("author")
-  tags        Tag[]     @relation("Post_tags_Tag_posts")
-
-  @@index([authorId])
+model Role {
+  id                      String  @id @default(cuid())
+  name                    String  @default("")
+  canManageClubs          Boolean @default(false)
+  canManageUsers          Boolean @default(false)
+  canReadAllAthletes      Boolean @default(false)
+  canWriteAllAthletes     Boolean @default(false)
+  canReadOwnClubAthletes  Boolean @default(false)
+  canWriteOwnClubAthletes Boolean @default(false)
+  canEnterScores          Boolean @default(false)
+  canEnterScoresWhenDone  Boolean @default(false)
+  canManageContent        Boolean @default(false)
+  users                   User[]  @relation("User_role")
 }
 
-model Tag {
-  id    String @id @default(cuid())
-  name  String @default("")
-  posts Post[] @relation("Post_tags_Tag_posts")
+model Club {
+  id            String    @id @default(cuid())
+  clubName      String    @default("")
+  clubNumber    Int?      @unique
+  contactEmail  String    @default("")
+  addressName   String    @default("")
+  street        String    @default("")
+  zip           String    @default("")
+  city          String    @default("")
+  country       String?   @default("AT")
+  external      Boolean   @default(false)
+  managerUser   User?     @relation("Club_managerUser", fields: [managerUserId], references: [id])
+  managerUserId String?   @unique @map("managerUser")
+  athletes      Athlete[] @relation("Athlete_club")
+  teams         Team[]    @relation("Team_club")
+}
+
+model Athlete {
+  id               String    @id @default(cuid())
+  firstName        String    @default("")
+  lastName         String    @default("")
+  birthYear        Int
+  gender           String?
+  disabled         Boolean   @default(false)
+  club             Club?     @relation("Athlete_club", fields: [clubId], references: [id])
+  clubId           String?   @map("club")
+  team             Team?     @relation("Athlete_team", fields: [teamId], references: [id])
+  teamId           String?   @map("team")
+  version          Int       @default(0)
+  createdBy        String    @default("")
+  lastModifiedBy   String    @default("")
+  createdDate      DateTime? @default(now())
+  lastModifiedDate DateTime? @default(now()) @updatedAt
+
+  @@index([clubId])
+  @@index([teamId])
+}
+
+model Team {
+  id       String    @id @default(cuid())
+  teamName String    @default("")
+  teamType String
+  club     Club?     @relation("Team_club", fields: [clubId], references: [id])
+  clubId   String?   @map("club")
+  athletes Athlete[] @relation("Athlete_team")
+
+  @@index([clubId])
 }
