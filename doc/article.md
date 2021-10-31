@@ -225,7 +225,7 @@ export const Club = list({
 Keystone offers quite nice data types to generate a reasonable admin ui right out of the box.
 
 ### Athlete
- 
+
 The athlete is more of the same, the only difference is that we also add change tracking fields which we will touch upon later.
 
 ```typescript
@@ -352,9 +352,11 @@ export const Team = list({
 
 ## Testing the performance of the queries
 
+We obviously want to know whether keystone does a credible job for our backend, one of the main aspects is
+performance of the queries.
 When executing the following GraphQL query 
 ```graphql
-query ExampleQuery {
+query ClubsWithAthletes {
   clubs {
     clubName
     street
@@ -414,7 +416,8 @@ WHERE (`main`.`Athlete`.`id`) IN
   ) LIMIT ? OFFSET ?
 ```
 
-Here it lists all athletes for a specific club. This is quite a naive approach since in theory you could query all athletes which have their club id within the list of ids coming from query 1.
+Here it lists all athletes for a specific club. This is quite a naive approach since in theory you could query all 
+athletes which have their club id within the list of ids coming from query 1.
 
 However, from the standpoint of proper paging athletes this approach makes more sense. 
 Lets imagine that we were to query only 3 athletes from each club
@@ -427,7 +430,8 @@ query ExampleQuery($take: Int) {
      }
   }
 ```
-Then the "optimized approach would lead to only return 3 athletes of the first club rather than returning 3 of each club.
+Then the "optimized" approach would lead to only return 3 athletes of the first club rather than 
+returning 3 of each club.
 
 ### Query 3 
 ```sql
@@ -448,13 +452,243 @@ WHERE
 LIMIT ? OFFSET ?
 ```
 This is obviously the same query as the previous one. 
+
 One thing to comment on is that the `INNER JOIN` on the `club` (within the inner `SELECT`) is a bit useless.
 Again this seems like the default implementation of keystone JS is playing it safe (as you might use a different linking criterium that is not mapped into the athlete). However, given that this usecase is the default for many-to-one relationships, it would have been nice 
 if the implementation would have used the variant without the inner join.
 
-However, given that most databases are quite smart, in reality this probably wont have any measurable effect.
+However, given that most databases are quite smart, in reality this probably won't have any measurable effect.
 
-To summarize, Keystone has a reasonable implementation for 1:many relationships which will produce a lesser form of the `n+1` problem.
-This will probably become more pronounced as we increase the complexity of the queries adding more levels.
+To summarize, Keystone has a reasonable implementation for `1:many` relationships which will produce a lesser 
+form of the `n+1` problem. This will probably become more pronounced as we increase the 
+complexity of the queries adding more levels.
 
-Whether or not this will create performance problems in practice will depend on your usecase.
+Whether this will create performance problems in practice will depend on your usecase.
+
+## Adding security
+
+In order to properly configure security, we have to tweak the `keystone.ts` configuration.
+
+```typescript
+
+import { config } from '@keystone-next/keystone'
+
+// Look in the schema file for how we define our lists, and how users interact with them through graphql or the Admin UI
+import { lists } from './schema'
+
+// Keystone auth is configured separately - check out the basic auth setup we are importing from our auth file.
+import { withAuth, session } from './auth'
+
+export default withAuth(
+  // Using the config function helps typescript guide you to the available options.
+  config({
+    // the db sets the database provider - we're using sqlite for the fastest startup experience
+    db: {
+      provider: 'sqlite',
+      url: 'file:./keystone.db',
+      enableLogging: true,
+    },
+    // This config allows us to set up features of the Admin UI https://keystonejs.com/docs/apis/config#ui
+    ui: {
+      // For our starter, we check that someone has session data before letting them see the Admin UI.
+      isAccessAllowed: context => !!context.session?.data,
+    },
+    lists,
+    session,
+  })
+)
+```
+
+We have moved our `lists` config into an own file and most of the authentication config is to be found in `./auth`.
+
+```typescript
+let sessionSecret = process.env.SESSION_SECRET
+
+// Here is a best practice! It's fine to not have provided a session secret in dev,
+// however it should always be there in production.
+if (!sessionSecret) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'The SESSION_SECRET environment variable must be set in production'
+    )
+  } else {
+    sessionSecret = '-- DEV COOKIE SECRET; CHANGE ME --'
+  }
+}
+
+// Here we define how auth relates to our schemas.
+// What we are saying here is that we want to use the list `User`, and to log in
+// we will need their email and password.
+const { withAuth } = createAuth({
+  listKey: 'User',
+  identityField: 'email',
+  sessionData: `id name email role { ${permissionsList.join(' ')} }`,
+  secretField: 'password',
+  initFirstItem: {
+    // If there are no items in the database, keystone will ask you to create
+    // a new user, filling in these fields.
+    fields: ['name', 'email', 'password'],
+  },
+})
+
+// This defines how long people will remain logged in for.
+// This will get refreshed when they log back in.
+let sessionMaxAge = 60 * 60 * 24 * 30 // 30 days
+
+// This defines how sessions should work. For more details, check out: https://keystonejs.com/docs/apis/session#session-api
+const sessionConfig = {
+  maxAge: sessionMaxAge,
+  secret: sessionSecret!,
+}
+const session = statelessSessions(sessionConfig)
+
+export { withAuth, session }
+```
+
+Here we configure the `User` list to contain all user logins. The important section is 
+
+```typescript
+  sessionData: `id name email role { ${permissionsList.join(' ')} }`,
+```
+
+where `permissionsList` is to be found in `./keystone/schema/fields.ts`. 
+Here we define all the fields we want to have in our `Role` table
+which basically configures all the permissions available in our system. 
+
+A good practice is to add indiviual permissions to read individual 
+elements such as `canReadOwnClubAthletes` vs. `canReadAllAthletes`.
+This gives us the ability to add fine-grained permission controls.
+
+```typescript
+import { checkbox } from '@keystone-next/keystone/fields'
+
+export const permissionFields = {
+  canManageClubs: checkbox({ defaultValue: false }),
+  canManageUsers: checkbox({ defaultValue: false }),
+  canReadAllAthletes: checkbox({ defaultValue: false }),
+  canWriteAllAthletes: checkbox({ defaultValue: false }),
+  canReadOwnClubAthletes: checkbox({ defaultValue: false }),
+  canWriteOwnClubAthletes: checkbox({ defaultValue: false }),
+  canEnterScores: checkbox({ defaultValue: false }),
+  canEnterScoresWhenDone: checkbox({ defaultValue: false }),
+  canManageContent: checkbox({ defaultValue: false }),
+}
+
+export type Permission = keyof typeof permissionFields
+
+export const permissionsList: Permission[] = Object.keys(
+  permissionFields
+) as Permission[]
+```
+
+If you start up the system first time and you don't have any users in the `User` table, 
+you need to comment out the `access` portion in the `user.ts` file for both
+`User` and `Role` in order to generate an "admin" role that can do everything 
+and is assigned to your newly created user.
+
+## Adding business logic
+
+### Limit access to `Club`s
+
+In order to properly protect the `Clubs` we will only allow signed in users with the correct permissions
+to access / update the data.
+
+```typescript
+function filterForAuthClub(args: { session: SessionContext<any> }) {
+  if (!isSignedIn(args)) {
+    return false
+  }
+  return permissions.canManageClubs(args)
+}
+
+export const Club = list({
+  access: {
+    filter: {
+      delete: args => filterForAuthClub(args),
+      query: args => filterForAuthClub(args),
+      update: args => filterForAuthClub(args),
+    },
+  },
+``` 
+
+Note that we could even return an additional filter that allows us to limit 
+`query`, `update` and `delete` to a subset of `Clubs`. That might be useful e.g. if a 
+specific user only has the ability to manage a certain club id.
+
+In that case the `filterForAuth` method would look like this: 
+```typescript
+function filterForAuthClub(args: { session: SessionContext<any> }) {
+  if (!isSignedIn(args)) {
+    return false
+  }
+  if (permissions.canManageClubs(args)) {
+    return true
+  }
+  const managedClubId = args.session.data.club?.id
+  if (!managedClubId) {
+    return false
+  }
+  return { id: { equals: managedClubId } }
+}
+```
+
+Here I am quite impressed with the possibilities that keystone provides. 
+In addition, we can do additional tasks via the 
+[hooks api](https://keystonejs.com/docs/apis/hooks).
+
+### Ensuring Athletes in `Team` have the matching gender
+
+One of our requirements is that all athletes in a team must match the teams `teamType`.
+So we cannot have male athletes in a female team.
+
+To do this we need to tackle this on multiple fronts. 
+
+* When an athlete is created and assigned to a team
+* When an athlete changes teams
+* When an update to an athlete is made that changes the `gender`
+* When a teams `teamType` is updated, we need to check all team members
+
+Lets start on the `Athlete` side:
+
+```typescript
+export const Athlete = list({
+    ...
+    hooks: {
+        validateInput: async args => {
+          const { resolvedData, item, context } = args
+          const newGender = resolvedData.gender ?? item?.gender
+          const teamId = resolvedData.team?.connect?.id ?? item?.teamId
+        
+          if (newGender && teamId) {
+            const team = await context.db.Team.findOne({
+              where: { id: teamId },
+            })
+            if (!teamTypeMatchesGender(team.teamType, newGender)) {
+              args.addValidationError(
+                `The gender for athlete (${newGender}) does not match to the teamType ${team.teamType} of team ${team.teamName}`
+              )
+            }
+          }
+        },
+      },
+      ...
+}
+
+export function teamTypeMatchesGender(teamType: string, gender: string) {
+  if (teamType === gender) {
+    return true
+  }
+  return teamType === 'MIXED'
+}
+```
+
+If we now try to save a previously female athlete that is in a female team and change the `gender` to `male` we get
+the following error:
+![wrong gender error message](04-save-wrong-gender.png)
+
+The same happens if we change the team to an all male team:
+
+![wrong teamType error message](05-wrong-team-type.png)
+
+## Limiting query complexity
+

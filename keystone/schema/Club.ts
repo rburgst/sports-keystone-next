@@ -6,8 +6,25 @@ import {
   text,
   relationship,
 } from '@keystone-next/keystone/fields'
+import { version } from '../fields/version-field'
+import { isSignedIn, permissions } from './access'
+import { SessionContext } from '@keystone-next/keystone/types'
+
+function filterForAuthClub(args: { session: SessionContext<any> }) {
+  if (!isSignedIn(args)) {
+    return false
+  }
+  return permissions.canManageClubs(args)
+}
 
 export const Club = list({
+  access: {
+    filter: {
+      delete: args => filterForAuthClub(args),
+      query: args => filterForAuthClub(args),
+      update: args => filterForAuthClub(args),
+    },
+  },
   ui: {
     labelField: 'clubName',
   },

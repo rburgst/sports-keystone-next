@@ -24,6 +24,9 @@ export const Team = list({
         { label: 'FEMALE', value: 'FEMALE' },
         { label: 'MIXED', value: 'MIXED' },
       ],
+      ui: {
+        displayMode: 'segmented-control',
+      },
     }),
     club: relationship({
       ref: 'Club.teams',
@@ -45,3 +48,10 @@ export const Team = list({
     }),
   },
 })
+
+export function teamTypeMatchesGender(teamType: string, gender: string) {
+  if (teamType === gender) {
+    return true
+  }
+  return teamType === 'MIXED'
+}

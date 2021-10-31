@@ -7,8 +7,10 @@ import {
   timestamp,
   relationship,
 } from '@keystone-next/keystone/fields'
+import { teamTypeMatchesGender } from './Team'
 
 export const Athlete = list({
+  access: {},
   ui: {
     labelField: 'lastName',
     listView: {
@@ -36,6 +38,26 @@ export const Athlete = list({
       ui: {
         displayMode: 'segmented-control',
       },
+      hooks: {
+        validateInput: async args => {
+          const { resolvedData, item, context } = args
+          const newGender = resolvedData.gender ?? item?.gender
+          const teamId = resolvedData.team?.connect?.id ?? item?.teamId
+
+          console.log('new gender', newGender, 'team', teamId)
+          if (newGender && teamId) {
+            const team = await context.db.Team.findOne({
+              where: { id: teamId },
+            })
+            console.log('got team', team)
+            if (!teamTypeMatchesGender(team.teamType, newGender)) {
+              args.addValidationError(
+                `The gender for athlete (${newGender}) does not match to the teamType ${team.teamType} of team ${team.teamName}`
+              )
+            }
+          }
+        },
+      },
     }),
     disabled: checkbox({ defaultValue: false }),
     club: relationship({
@@ -47,7 +69,9 @@ export const Athlete = list({
     team: relationship({
       ref: 'Team.athletes',
       ui: {
-        displayMode: 'select',
+        displayMode: 'cards',
+        cardFields: ['teamName', 'club'],
+        inlineConnect: true,
       },
     }),
     version: integer({ db: { isNullable: false }, defaultValue: 0 }),
