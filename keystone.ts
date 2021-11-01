@@ -13,6 +13,8 @@ import { lists } from './schema'
 
 // Keystone auth is configured separately - check out the basic auth setup we are importing from our auth file.
 import { withAuth, session } from './auth'
+import { insertSeedData } from './ks/seed-data/insert-seed-data'
+
 
 export default withAuth(
   // Using the config function helps typescript guide you to the available options.
@@ -22,6 +24,12 @@ export default withAuth(
       provider: 'sqlite',
       url: 'file:./keystone.db',
       enableLogging: true,
+      async onConnect(context) {
+        console.log('Connected to the database!')
+        if (process.argv.includes('--seed-data')) {
+          await insertSeedData(context)
+        }
+      },
     },
     // This config allows us to set up features of the Admin UI https://keystonejs.com/docs/apis/config#ui
     ui: {

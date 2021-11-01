@@ -690,5 +690,42 @@ The same happens if we change the team to an all male team:
 
 ![wrong teamType error message](05-wrong-team-type.png)
 
+## Inserting seed data
+
+Sometimes when you make destructive changes to the data model 
+(and you haven't turned on prisma migrations yet), your database will
+be re-created. Therefore its quite a chore to setup your test data
+time and time again.
+
+Therefore, `keystone` gives us the ability to insert seed data via a commandline switch.
+
+First we create a new script in `package.json`
+
+```json
+  "scripts": {
+    ...
+    "seed-data": "keystone-next --seed-data"
+  }
+```
+
+Then in `./keystone.ts` we add the `onConnect` hook in the `db` section
+
+```typescript
+    db: {
+      provider: databaseProvider as 'sqlite' | 'postgresql',
+      url: databaseURL,
+      enableLogging: true,
+      async onConnect(context) {
+        console.log('Connected to the database!')
+        if (process.argv.includes('--seed-data')) {
+          await insertSeedData(context)
+        }
+      },
+    },
+```
+
+Finally we add the `insertSeedData`
 ## Limiting query complexity
 
+
+## Testing
