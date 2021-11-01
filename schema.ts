@@ -30,10 +30,10 @@ import {
 // Keystone aims to have all the base field types, but you can make your own
 // custom ones.
 import { document } from '@keystone-next/fields-document'
-import { User, Role } from './keystone/schema/User'
-import { Club } from './keystone/schema/Club'
-import { Athlete } from './keystone/schema/Athlete'
-import { Team } from './keystone/schema/Team'
+import { User, Role } from './ks/schema/User'
+import { Club } from './ks/schema/Club'
+import { Athlete } from './ks/schema/Athlete'
+import { Team } from './ks/schema/Team'
 
 // We have a users list, a blogs list, and tags for blog posts, so they can be filtered.
 // Each property on the exported object will become the name of a list (a.k.a. the `listKey`),

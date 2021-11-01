@@ -21,16 +21,16 @@ const fieldModes = {
 }
 
 export const User = list({
-  // access: {
-  //   operation: {
-  //     create: () => true,
-  //   },
-  //   filter: {
-  //     query: () => true,
-  //     update: rules.canManageUserList,
-  //     delete: rules.canManageUserList,
-  //   },
-  // },
+  access: {
+    operation: {
+      create: () => true,
+    },
+    filter: {
+      query: () => true,
+      update: rules.canManageUserList,
+      delete: rules.canManageUserList,
+    },
+  },
   ui: {
     hideCreate: context => !permissions.canManageUsers(context),
     hideDelete: context => !permissions.canManageUsers(context),
@@ -78,15 +78,15 @@ export const User = list({
 })
 
 export const Role = list({
-  // access: {
-  //   filter: {
-  //     delete: permissions.canManageUsers,
-  //     query: permissions.canManageUsers,
-  //     update: permissions.canManageUsers,
-  //   },
-  // },
+  access: {
+    filter: {
+      delete: permissions.canManageUsers,
+      query: permissions.canManageUsers,
+      update: permissions.canManageUsers,
+    },
+  },
   ui: {
-    //isHidden: context => !permissions.canManageUsers(context),
+    isHidden: context => !permissions.canManageUsers(context),
   },
   fields: {
     name: text(),

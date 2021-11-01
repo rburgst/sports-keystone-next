@@ -11,7 +11,7 @@ import { createAuth } from '@keystone-next/auth'
 
 // See https://keystonejs.com/docs/apis/session#session-api for the session docs
 import { statelessSessions } from '@keystone-next/keystone/session'
-import { permissionsList } from './keystone/schema/fields'
+import { permissionsList } from './ks/schema/fields'
 
 let sessionSecret = process.env.SESSION_SECRET
 

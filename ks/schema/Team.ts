@@ -1,11 +1,6 @@
 import { list } from '@keystone-next/keystone'
-import {
-  checkbox,
-  integer,
-  select,
-  text,
-  relationship,
-} from '@keystone-next/keystone/fields'
+import { relationship, select, text } from '@keystone-next/keystone/fields'
+import { PrismaClient } from '@prisma/client'
 
 export const Team = list({
   ui: {
@@ -46,6 +41,33 @@ export const Team = list({
         //        inlineCreate: { fields: ['lastName', 'firstName', 'birthYear'] },
       },
     }),
+  },
+  hooks: {
+    validateInput: async ({
+      resolvedData,
+      context,
+      addValidationError,
+      item,
+    }) => {
+      const teamType = resolvedData.teamType ?? item?.teamType
+      const teamId = resolvedData.id ?? item?.id
+      if (teamType && teamId) {
+        const prisma: PrismaClient = context.prisma
+        const members = await prisma.athlete.groupBy({
+          where: { team: { id: { equals: teamId } } },
+          by: ['gender'],
+        })
+        console.log('got team member genders', members)
+        const memberWithWrongGender = members.find(
+          member => !teamTypeMatchesGender(teamType, member.gender ?? '')
+        )
+        if (memberWithWrongGender) {
+          addValidationError(
+            `There are athletes in the team with a non-matching gender ${memberWithWrongGender.gender} for teamType ${teamType}`
+          )
+        }
+      }
+    },
   },
 })
 
