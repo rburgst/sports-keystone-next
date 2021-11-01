@@ -13,7 +13,7 @@
     "migrate": "keystone-next prisma migrate deploy",
     "format": "prettier --write \"**/*.ts\"",
     "postinstall": "keystone-next postinstall",
-    "test": "jest --timeout 60",
+    "test": "DOTENV_CONFIG_PATH=.env.test jest --timeout 60",
     "seed-data": "keystone-next --seed-data"
   },
   "dependencies": {
