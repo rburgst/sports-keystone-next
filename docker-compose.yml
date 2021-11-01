@@ -1,0 +1,16 @@
+version: '3.9' # optional since v1.27.0
+
+services:
+  postgres:
+    image: postgres:11-alpine
+    ports:
+      - '5434:5432'
+    environment:
+      - POSTGRES_USER=sports-ks
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_DB=sports-ks
+    volumes:
+      - ./src/docker/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - sports-ks-postgresql:/var/lib/postgresql
+volumes:
+  sports-ks-postgresql: {}

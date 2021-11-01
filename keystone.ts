@@ -7,7 +7,7 @@ You can find all the config options in our docs here: https://keystonejs.com/doc
 */
 
 import { config } from '@keystone-next/keystone'
-
+import * as dotenv from 'dotenv'
 // Look in the schema file for how we define our lists, and how users interact with them through graphql or the Admin UI
 import { lists } from './schema'
 
@@ -15,14 +15,24 @@ import { lists } from './schema'
 import { withAuth, session } from './auth'
 import { insertSeedData } from './ks/seed-data/insert-seed-data'
 
+dotenv.config({ debug: true, path: process.env.DOTENV_CONFIG_PATH })
+
+const databaseURL = process.env.DATABASE_URL
+const databaseProvider = process.env.DATABASE_PROVIDER
+if (!databaseURL) {
+  throw new Error('no DATABASE_URL in env')
+}
+if (!databaseProvider) {
+  throw new Error('no DATABASE_PROVIDER in env')
+}
 
 export default withAuth(
   // Using the config function helps typescript guide you to the available options.
   config({
     // the db sets the database provider - we're using sqlite for the fastest startup experience
     db: {
-      provider: 'sqlite',
-      url: 'file:./keystone.db',
+      provider: databaseProvider as 'sqlite' | 'postgresql',
+      url: databaseURL,
       enableLogging: true,
       async onConnect(context) {
         console.log('Connected to the database!')
