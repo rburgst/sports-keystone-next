@@ -2436,6 +2436,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/graphql-depth-limit@npm:^1.1.3":
+  version: 1.1.3
+  resolution: "@types/graphql-depth-limit@npm:1.1.3"
+  dependencies:
+    graphql: ^14.5.3
+  checksum: 99ff00a8c3c65255def2b9404196e2c3f4e6ad71f45333110c265ac26e204017856228d9b5e66cf3488c63283317ed04f84d437b85f7889343635a8f47a03b9d
+  languageName: node
+  linkType: hard
+
 "@types/graphql-upload@npm:^8.0.7":
   version: 8.0.7
   resolution: "@types/graphql-upload@npm:8.0.7"
@@ -6254,6 +6263,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"graphql-depth-limit@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "graphql-depth-limit@npm:1.1.0"
+  dependencies:
+    arrify: ^1.0.1
+  peerDependencies:
+    graphql: "*"
+  checksum: e43c8c0462612870797c0691e2c9488d6773eb794dda2b71c2c5659f721ec28be42e6c1f381e3b05a892c25d212d9babe08888a8ce6fd4f83ecc19a988675e56
+  languageName: node
+  linkType: hard
+
 "graphql-tag@npm:^2.11.0, graphql-tag@npm:^2.12.3":
   version: 2.12.5
   resolution: "graphql-tag@npm:2.12.5"
@@ -6286,6 +6306,15 @@ __metadata:
   peerDependencies:
     graphql: 0.13.1 - 15
   checksum: 2cbd0e073f6f18e271886456b823954367b1c57e92c49f131e8e09a1e48b1b94d7b9fa9157938c7f20f810550658c66729d20e587dab05add91b842a397439dd
+  languageName: node
+  linkType: hard
+
+"graphql@npm:^14.5.3":
+  version: 14.7.0
+  resolution: "graphql@npm:14.7.0"
+  dependencies:
+    iterall: ^1.2.2
+  checksum: e5f4e60799421a573904f390e1ec0aa76360f751688dbbe62e9c35baa0d3727c8d59a659bfc524f126dffe3518da87fd8ecaa78c94fd5c0fe4e035c670745242
   languageName: node
   linkType: hard
 
@@ -7300,6 +7329,13 @@ __metadata:
     html-escaper: ^2.0.0
     istanbul-lib-report: ^3.0.0
   checksum: b167411c4cd551aec39c8275ef42f25e7083caa5a467c1b35f33b19f37211656ebf03f1cbe5c55d691b44398314dcc73be52dc6b7afb13b7a1a02eb65d702a75
+  languageName: node
+  linkType: hard
+
+"iterall@npm:^1.2.2":
+  version: 1.3.0
+  resolution: "iterall@npm:1.3.0"
+  checksum: c78b99678f8c99be488cca7f33e4acca9b72c1326e050afbaf023f086e55619ee466af0464af94a0cb3f292e60cb5bac53a8fd86bd4249ecad26e09f17bb158b
   languageName: node
   linkType: hard
 
@@ -11072,12 +11108,14 @@ resolve@^2.0.0-next.3:
     "@keystone-next/keystone": ^26.1.1
     "@prisma/client": latest
     "@tailwindcss/forms": ^0.3.4
+    "@types/graphql-depth-limit": ^1.1.3
     "@types/jest": ^27.0.2
     "@types/react": ^17.0.33
     autoprefixer: ^10.4.0
     dotenv: ^10.0.0
     eslint: ^8.1.0
     eslint-config-next: ^12.0.1
+    graphql-depth-limit: ^1.1.0
     jest: ^27.3.1
     next: ^11.1.2
     next-auth: ^3.29.0

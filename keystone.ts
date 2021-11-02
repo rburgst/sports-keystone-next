@@ -14,6 +14,7 @@ import { lists } from './schema'
 // Keystone auth is configured separately - check out the basic auth setup we are importing from our auth file.
 import { withAuth, session } from './auth'
 import { insertSeedData } from './ks/seed-data/insert-seed-data'
+import depthLimit from 'graphql-depth-limit'
 
 dotenv.config({ debug: true, path: process.env.DOTENV_CONFIG_PATH })
 
@@ -48,5 +49,14 @@ export default withAuth(
     },
     lists,
     session,
+    graphql: {
+      debug: process.env.NODE_ENV !== 'production',
+      queryLimits: {
+        maxTotalResults: 200,
+      },
+      apolloConfig: {
+        validationRules: [depthLimit(2)],
+      },
+    },
   })
 )

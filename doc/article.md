@@ -849,9 +849,170 @@ describe('team tests', () => {
     })
   )
 })
-
 ```
+
+Now this works exactly as I had hoped. Tests are easy to write and you have the powerful 
+`db`, `query` and `prisma` APIs available. 
 
 ## Limiting query complexity
 
+In order to protect our api from being brought down by innocently stupid (or malicious) requests we
+should always attempt to impose limits on the query complexity. 
+Otherwise someone will attempt to create ever more complex queries and bring down the server performance to a crawl
+(making the service unusable also for proper behaving clients).
 
+Since introducing limits later in the project will make clients upset, it is always a good idea to start
+with strict limits early and only extend them once there is a reasonable explanation of why higher limits are needed.
+
+Again, `keystone` does not disappoint here as we can see here: 
+https://github.com/keystonejs/keystone/blob/main/tests/api-tests/queries/limits.test.ts
+
+However, the [docs](https://keystonejs.com/docs/apis/config#graphql) leave quite a bit unexplained on how to do that.
+There is a convenient `config.graphql.queryLimits.maxTotalResults` option available (as well as the per list 
+[queryLimits](https://keystonejs.com/docs/apis/schema#graphql), this will not protect 
+from users trying to create recursive queries.
+
+The question is on what to put into `config.graphql.apolloConfig.validationRules`?
+```typescript
+    graphql: {
+      queryLimits: {
+        maxTotalResults: 200,
+      },
+      apolloConfig: {
+        validationRules: ???,
+      },
+    },
+```
+
+The api doc links to https://www.apollographql.com/docs/apollo-server/api/apollo-server/#constructor which at the point
+of the creation of this article (November 2021) does not really provide anything super helpful as it simply 
+links to a bunch of [random looking validation rules](https://github.com/graphql/graphql-js/tree/main/src/validation/rules)
+that won't really achieve what I am looking for. 
+
+Googling around a bit revealed [this very helpful article](https://www.apollographql.com/blog/graphql/security/securing-your-graphql-api-from-malicious-queries/)
+which exactly describes what we need.
+ 
+For the time being limiting the query depth via [graphql-depth-limit](https://github.com/stems/graphql-depth-limit) 
+is what we will start with, however, adding more complex query complexity rules via 
+[graphql-validation-complexity](https://github.com/4Catalyzer/graphql-validation-complexity) should be considered
+very early on. 
+This will obviously also depend on whether you can control who will be able to use your api.
+
+Integrating `graphql-depth-limit` is very simple
+
+```bash
+yarn add graphql-depth-limit 
+yarn add -D @types/graphql-depth-limit 
+```
+
+and then simply add this to the `config` section in `./keystone.ts`:
+```typescript
+import depthLimit from 'graphql-depth-limit'
+...
+   
+   graphql: {
+      debug: process.env.NODE_ENV !== 'production',
+      queryLimits: {
+        maxTotalResults: 200,
+      },
+      apolloConfig: {
+        validationRules: [depthLimit(2)],
+      },
+    },
+
+```
+While a depth limit of `2` is probably too harsh, it is enough to test it out.
+
+```graphql
+query GetClubsStillAllowed {
+  clubs {
+    clubName
+    athletes {
+      firstName
+      lastName
+    }
+  }
+```
+produces 
+```json
+{
+  "data": {
+    "clubs": [
+      {
+        "clubName": "test club 1",
+        "athletes": []
+      }
+    ]
+  }
+}
+```
+
+But requesting
+```graphql
+query GetClubsComplex {
+  clubs {
+    clubName
+    athletes {
+      firstName
+      lastName
+      team {
+        id
+        teamName
+      }
+    }
+  }
+}
+```
+produces 
+```json
+{
+  "errors": [
+    {
+      "message": "'GetClubsComplex' exceeds maximum operation depth of 2",
+      "locations": [
+        {
+          "line": 8,
+          "column": 9
+        }
+      ],
+      "extensions": {
+        "code": "GRAPHQL_VALIDATION_FAILED",
+        "exception": {
+          "stacktrace": ...
+        }
+      }
+    },
+    {
+      "message": "'GetClubsComplex' exceeds maximum operation depth of 2",
+      "locations": [
+        {
+          "line": 9,
+          "column": 9
+        }
+      ],
+      "extensions": {
+        "code": "GRAPHQL_VALIDATION_FAILED",
+        "exception": {
+          "stacktrace": [
+            ...
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+This works as intended, nice!
+
+# Conclusion part 1
+
+In part 1 of this series we introduced `keystone.js` and explored how to set it up and extend
+it with custom business logic. We added integration tests and further limited the query complexity 
+in order to protect the server from overly complex queries. 
+
+All of the requested features were quite easy to implement and for the most part, keystones documentation
+leaves little to be desired.
+
+At this point we are ready to hook this up with a frontend application which will be what part 2 
+will be about.
