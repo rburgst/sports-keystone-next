@@ -571,7 +571,6 @@ export const permissionFields = {
   canWriteOwnClubAthletes: checkbox({ defaultValue: false }),
   canEnterScores: checkbox({ defaultValue: false }),
   canEnterScoresWhenDone: checkbox({ defaultValue: false }),
-  canManageContent: checkbox({ defaultValue: false }),
 }
 
 export type Permission = keyof typeof permissionFields
@@ -590,51 +589,59 @@ and is assigned to your newly created user.
 
 ### Limit access to `Club`s
 
-In order to properly protect the `Clubs` we will only allow signed in users with the correct permissions
+In order to properly protect the `Clubs` we will only allow signed-in users with the correct permissions
 to access / update the data.
 
 ```typescript
-function filterForAuthClub(args: { session: SessionContext<any> }) {
-  if (!isSignedIn(args)) {
-    return false
-  }
-  return permissions.canManageClubs(args)
-}
-
 export const Club = list({
   access: {
     filter: {
-      delete: args => filterForAuthClub(args),
-      query: args => filterForAuthClub(args),
-      update: args => filterForAuthClub(args),
+      delete: rules.canManageClubList,
+      query: rules.canManageClubList,
+      update: rules.canManageClubList,
     },
   },
 ``` 
+
+where `rules.canManageClubList` looks as follows:
+
+```typescript
+// ./ks/schema/access.ts
+export const rules = {
+  canManageClubList: ({ session }: SessionContext) => {
+    if (!isSignedIn({ session })) {
+      return false
+    }
+    if (permissions.canManageClubs({ session })) {
+      return true
+    }
+    return false
+  },
+```
 
 Note that we could even return an additional filter that allows us to limit 
 `query`, `update` and `delete` to a subset of `Clubs`. That might be useful e.g. if a 
 specific user only has the ability to manage a certain club id.
 
-In that case the `filterForAuth` method would look like this: 
+In that case the `rules.canManageClubList` method would look like this: 
 ```typescript
-function filterForAuthClub(args: { session: SessionContext<any> }) {
-  if (!isSignedIn(args)) {
-    return false
-  }
-  if (permissions.canManageClubs(args)) {
-    return true
-  }
-  const managedClubId = args.session.data.club?.id
-  if (!managedClubId) {
-    return false
-  }
-  return { id: { equals: managedClubId } }
-}
+  canManageClubList: ({ session }: SessionContext) => {
+    if (!isSignedIn({ session })) {
+      return false
+    }
+    if (permissions.canManageClubs({ session })) {
+      return true
+    }
+    const managedClubId = session?.data.club?.id
+    if (!managedClubId) {
+      return false
+    }
+    return { id: { equals: managedClubId } }
+  },
 ```
 
-Here I am quite impressed with the possibilities that keystone provides. 
-In addition, we can do additional tasks via the 
-[hooks api](https://keystonejs.com/docs/apis/hooks).
+Here I am quite impressed with the possibilities that keystone provides, for more information on access control
+check out [access controls](https://keystonejs.com/docs/apis/access-control).
 
 ### Ensuring Athletes in `Team` have the matching gender
 
@@ -724,7 +731,7 @@ Then in `./keystone.ts` we add the `onConnect` hook in the `db` section
     },
 ```
 
-Finally we add the `insertSeedData` method:
+Finally, we add the `insertSeedData` method:
 
 ```typescript
 import { KeystoneContext } from '@keystone-next/keystone/types'
@@ -766,16 +773,6 @@ export async function insertSeedData({ prisma, query }: KeystoneContext) {
       }
     }
 
-    // now add other roles
-    console.log(`🌱 Insert seed data: admin role`)
-    const { id: clubAdminRoleId } = await client.role.create({
-      data: {
-        name: 'club admin',
-        canReadOwnClubAthletes: true,
-        canWriteOwnClubAthletes: true,
-      },
-    })
-
     // now add clubs
     console.log(`🌱 Insert seed data: club 1`)
     const club1 = await client.club.create({
@@ -814,9 +811,10 @@ export async function insertSeedData({ prisma, query }: KeystoneContext) {
 Now we no longer need to manually create the test data, sweet.
 
 ## Testing
+
 Usually I tend to implement new features in a TDD manner, however, since we were
 still exploring keystone, we failed to do that up until now.
-Lets correct that and add tests for our newly introduced business logic.
+Let's correct that and add tests for our newly introduced business logic.
 
 ```typescript
 import { setupTestRunner } from '@keystone-next/keystone/testing'
@@ -853,6 +851,40 @@ describe('team tests', () => {
 
 Now this works exactly as I had hoped. Tests are easy to write and you have the powerful 
 `db`, `query` and `prisma` APIs available. 
+
+## Further securing the APIs
+
+We already 
+We want to make use of keystones authentication mechanism to prevent unauthenticated users from 
+accessing our service. Up until now, you can query our GraphQL API without any authentication which 
+is great for development, not so much for running an internet based service.
+
+Keystone provides a rich set of [access controls](https://keystonejs.com/docs/apis/access-control) to limit who can do what
+
+For our sample we will secure the `Club` list so that only Admins can read and write data. In the future
+we can extend this functionality to allowing certain roles only to query data for "their own club" quite easily.
+
+```typescript
+export const Club = list({
+  access: {
+    filter: {
+      delete: rules.canManageClubList,
+      query: rules.canManageClubList,
+      update: rules.canManageClubList,
+    },
+    operation: {
+      delete: permissions.canManageClubs,
+      update: permissions.canManageClubs,
+      create: permissions.canManageClubs,
+      query: permissions.canManageClubs,
+    },
+    item: {
+      create: permissions.canManageClubs,
+      update: permissions.canManageClubs,
+      delete: permissions.canManageClubs,
+    },
+  },
+```
 
 ## Limiting query complexity
 

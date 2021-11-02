@@ -1,18 +1,22 @@
-type SessionContext = {
+export type SessionContextData = {
+  name: string
+  club?: {
+    id: string
+  }
+  role: {
+    canManageClubs: boolean
+    canManageUsers: boolean
+    canReadAllAthletes: boolean
+    canWriteAllAthletes: boolean
+    canReadOwnClubAthletes: boolean
+    canWriteOwnClubAthletes: boolean
+    canEnterScores: boolean
+    canEnterScoresWhenDone: boolean
+  }
+}
+export type SessionContext = {
   session?: {
-    data: {
-      name: string
-      role: {
-        canManageClubs: boolean
-        canManageUsers: boolean
-        canReadAllAthletes: boolean
-        canWriteAllAthletes: boolean
-        canReadOwnClubAthletes: boolean
-        canWriteOwnClubAthletes: boolean
-        canEnterScores: boolean
-        canEnterScoresWhenDone: boolean
-      }
-    }
+    data: SessionContextData
     itemId: string
     listKey: string
   }
@@ -48,18 +52,34 @@ export const rules = {
   canUseAdminUI: ({ session }: SessionContext) => {
     return !!session?.data.role
   },
-  canReadContentList: ({ session }: SessionContext) => {
-    if (permissions.canManageContent({ session })) return true
-    return { status: { equals: 'published' } }
+
+  canManageClubList: ({ session }: SessionContext) => {
+    if (!isSignedIn({ session })) {
+      return false
+    }
+    if (permissions.canManageClubs({ session })) {
+      return true
+    }
+    const managedClubId = session?.data.club?.id
+    if (!managedClubId) {
+      return false
+    }
+    return { id: { equals: managedClubId } }
   },
+
   canManageUser: ({ session, item }: ItemContext) => {
-    if (permissions.canManageUsers({ session })) return true
-    if (session?.itemId === item.id) return true
-    return false
+    if (permissions.canManageUsers({ session })) {
+      return true
+    }
+    return session?.itemId === item.id
   },
   canManageUserList: ({ session }: SessionContext) => {
-    if (permissions.canManageUsers({ session })) return true
-    if (!isSignedIn({ session })) return false
-    return { where: { id: { equals: session!.itemId } } }
+    if (!isSignedIn({ session })) {
+      return false
+    }
+    if (permissions.canManageUsers({ session })) {
+      return true
+    }
+    return false
   },
 }

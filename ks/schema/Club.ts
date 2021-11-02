@@ -7,9 +7,27 @@ import {
   text,
 } from '@keystone-next/keystone/fields'
 import { version } from '../fields/version-field'
-import { rules } from './access'
+import { permissions, rules } from './access'
 
 export const Club = list({
+  access: {
+    filter: {
+      delete: rules.canManageClubList,
+      query: rules.canManageClubList,
+      update: rules.canManageClubList,
+    },
+    operation: {
+      delete: permissions.canManageClubs,
+      update: permissions.canManageClubs,
+      create: permissions.canManageClubs,
+      query: permissions.canManageClubs,
+    },
+    item: {
+      create: permissions.canManageClubs,
+      update: permissions.canManageClubs,
+      delete: permissions.canManageClubs,
+    },
+  },
   ui: {
     labelField: 'clubName',
   },
