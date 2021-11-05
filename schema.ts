@@ -29,7 +29,6 @@ import {
 // The document field is a more complicated field, so it's in its own package
 // Keystone aims to have all the base field types, but you can make your own
 // custom ones.
-import { document } from '@keystone-next/fields-document'
 import { User, Role } from './ks/schema/User'
 import { Club } from './ks/schema/Club'
 import { Athlete } from './ks/schema/Athlete'
